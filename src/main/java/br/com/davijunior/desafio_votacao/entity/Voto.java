@@ -39,7 +39,7 @@ public class Voto {
     private Associado associado;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "opcao", nullable = false)
+    @Column(name = "opcao", nullable = false, length = 10)
     private OpcaoVoto opcao;
 
     @Column(name = "created_at", nullable = false, updatable = false)

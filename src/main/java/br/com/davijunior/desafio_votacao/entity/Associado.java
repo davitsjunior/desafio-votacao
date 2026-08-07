@@ -25,6 +25,6 @@ public class Associado {
     private Long id;
 
     @NotBlank
-    @Column(name = "cpf", nullable = false, unique = true)
+    @Column(name = "cpf", nullable = false, unique = true, length = 20)
     private String cpf;
 }
