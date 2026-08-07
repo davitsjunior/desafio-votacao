@@ -1,4 +1,8 @@
 package br.com.davijunior.desafio_votacao.dto.request;
 
-public record PautaRequest(String titulo, String descricao) {
+import jakarta.validation.constraints.NotBlank;
+
+public record PautaRequest(
+        @NotBlank String titulo,
+        String descricao) {
 }

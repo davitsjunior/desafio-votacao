@@ -3,6 +3,7 @@ package br.com.davijunior.desafio_votacao.controller;
 import br.com.davijunior.desafio_votacao.dto.request.SessaoRequest;
 import br.com.davijunior.desafio_votacao.dto.response.SessaoResponse;
 import br.com.davijunior.desafio_votacao.service.SessaoService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class SessaoController {
 
     @PostMapping
     public ResponseEntity<SessaoResponse> abrir(@PathVariable Long pautaId,
-                                                 @RequestBody(required = false) SessaoRequest request) {
+                                                 @Valid @RequestBody(required = false) SessaoRequest request) {
         SessaoRequest body = request != null ? request : new SessaoRequest(null);
         SessaoResponse response = sessaoService.abrir(pautaId, body);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

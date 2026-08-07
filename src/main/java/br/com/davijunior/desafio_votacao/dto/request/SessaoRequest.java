@@ -1,4 +1,6 @@
 package br.com.davijunior.desafio_votacao.dto.request;
 
-public record SessaoRequest(Integer duracaoMinutos) {
+import jakarta.validation.constraints.Positive;
+
+public record SessaoRequest(@Positive Integer duracaoMinutos) {
 }

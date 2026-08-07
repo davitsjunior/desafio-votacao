@@ -3,6 +3,7 @@ package br.com.davijunior.desafio_votacao.controller;
 import br.com.davijunior.desafio_votacao.dto.request.VotoRequest;
 import br.com.davijunior.desafio_votacao.dto.response.VotoResponse;
 import br.com.davijunior.desafio_votacao.service.VotoService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class VotoController {
     private final VotoService votoService;
 
     @PostMapping
-    public ResponseEntity<VotoResponse> votar(@PathVariable Long pautaId, @RequestBody VotoRequest request) {
+    public ResponseEntity<VotoResponse> votar(@PathVariable Long pautaId, @Valid @RequestBody VotoRequest request) {
         VotoResponse response = votoService.votar(pautaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
