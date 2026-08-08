@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -60,6 +61,17 @@ class SessaoControllerTest {
     void deveRetornar409QuandoSessaoJaExiste() throws Exception {
         when(sessaoService.abrir(eq(1L), any(SessaoRequest.class)))
                 .thenThrow(new SessaoJaExisteException("Já existe sessão para a pauta: 1"));
+
+        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new SessaoRequest(null))))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void deveRetornar409QuandoViolarRestricaoDeIntegridade() throws Exception {
+        when(sessaoService.abrir(eq(1L), any(SessaoRequest.class)))
+                .thenThrow(new DataIntegrityViolationException("uk_sessao_pauta"));
 
         mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
