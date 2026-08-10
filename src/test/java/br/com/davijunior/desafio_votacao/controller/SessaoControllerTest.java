@@ -40,7 +40,7 @@ class SessaoControllerTest {
         SessaoResponse response = new SessaoResponse(10L, 1L, Instant.now(), Instant.now().plusSeconds(60), StatusSessao.ABERTA);
         when(sessaoService.abrir(eq(1L), any(SessaoRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L))
+        mockMvc.perform(post("/v1/pautas/{pautaId}/sessao", 1L))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(10L))
                 .andExpect(jsonPath("$.status").value("ABERTA"));
@@ -51,7 +51,7 @@ class SessaoControllerTest {
         when(sessaoService.abrir(eq(1L), any(SessaoRequest.class)))
                 .thenThrow(new PautaNaoEncontradaException("Pauta não encontrada: 1"));
 
-        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/sessao", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SessaoRequest(null))))
                 .andExpect(status().isNotFound());
@@ -62,7 +62,7 @@ class SessaoControllerTest {
         when(sessaoService.abrir(eq(1L), any(SessaoRequest.class)))
                 .thenThrow(new SessaoJaExisteException("Já existe sessão para a pauta: 1"));
 
-        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/sessao", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SessaoRequest(null))))
                 .andExpect(status().isConflict());
@@ -70,7 +70,7 @@ class SessaoControllerTest {
 
     @Test
     void deveRetornar400QuandoDuracaoMinutosForZero() throws Exception {
-        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/sessao", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SessaoRequest(0))))
                 .andExpect(status().isBadRequest());
@@ -78,7 +78,7 @@ class SessaoControllerTest {
 
     @Test
     void deveRetornar400QuandoDuracaoMinutosForNegativa() throws Exception {
-        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/sessao", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SessaoRequest(-1))))
                 .andExpect(status().isBadRequest());
@@ -89,7 +89,7 @@ class SessaoControllerTest {
         when(sessaoService.abrir(eq(1L), any(SessaoRequest.class)))
                 .thenThrow(new DataIntegrityViolationException("uk_sessao_pauta"));
 
-        mockMvc.perform(post("/pautas/{pautaId}/sessao", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/sessao", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new SessaoRequest(null))))
                 .andExpect(status().isConflict());

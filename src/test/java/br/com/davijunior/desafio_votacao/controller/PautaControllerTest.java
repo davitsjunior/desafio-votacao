@@ -35,7 +35,7 @@ class PautaControllerTest {
         PautaResponse response = new PautaResponse(1L, "Título", "Descrição", Instant.now());
         when(pautaService.cadastrar(any(PautaRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/pautas")
+        mockMvc.perform(post("/v1/pautas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PautaRequest("Título", "Descrição"))))
                 .andExpect(status().isCreated())
@@ -45,7 +45,7 @@ class PautaControllerTest {
 
     @Test
     void deveRetornar400QuandoTituloEmBranco() throws Exception {
-        mockMvc.perform(post("/pautas")
+        mockMvc.perform(post("/v1/pautas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new PautaRequest("", "Descrição"))))
                 .andExpect(status().isBadRequest());

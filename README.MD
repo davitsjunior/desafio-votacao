@@ -67,18 +67,22 @@ Com a aplicação em execução:
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
+## Versionamento da API
+
+Estratégia adotada: **versionamento via URI path**, com prefixo `/v1` em todos os endpoints (ex.: `/v1/pautas`). Uma futura versão incompatível seria exposta em controllers próprios sob `/v2`, mantendo `/v1` funcionando sem quebra para clientes existentes.
+
 ## Endpoints
 
-| Método | Endpoint                     | Descrição                                  |
-|--------|-------------------------------|---------------------------------------------|
-| POST   | `/pautas`                    | Cadastra uma nova pauta                     |
-| POST   | `/pautas/{pautaId}/sessao`   | Abre uma sessão de votação (padrão: 1 min)  |
-| POST   | `/pautas/{pautaId}/votos`    | Registra o voto de um associado             |
-| GET    | `/pautas/{pautaId}/resultado`| Consulta o resultado da votação             |
+| Método | Endpoint                        | Descrição                                  |
+|--------|-----------------------------------|---------------------------------------------|
+| POST   | `/v1/pautas`                    | Cadastra uma nova pauta                     |
+| POST   | `/v1/pautas/{pautaId}/sessao`   | Abre uma sessão de votação (padrão: 1 min)  |
+| POST   | `/v1/pautas/{pautaId}/votos`    | Registra o voto de um associado             |
+| GET    | `/v1/pautas/{pautaId}/resultado`| Consulta o resultado da votação             |
 
 ### Cadastrar pauta
 
-`POST /pautas`
+`POST /v1/pautas`
 
 Requisição:
 ```json
@@ -100,7 +104,7 @@ Resposta `201 Created`:
 
 ### Abrir sessão de votação
 
-`POST /pautas/{pautaId}/sessao`
+`POST /v1/pautas/{pautaId}/sessao`
 
 Requisição (corpo opcional — sem corpo ou `duracaoMinutos: null` usa o padrão de 1 minuto):
 ```json
@@ -122,7 +126,7 @@ Resposta `201 Created`:
 
 ### Registrar voto
 
-`POST /pautas/{pautaId}/votos`
+`POST /v1/pautas/{pautaId}/votos`
 
 Requisição:
 ```json
@@ -144,7 +148,7 @@ Resposta `201 Created`:
 
 ### Consultar resultado
 
-`GET /pautas/{pautaId}/resultado`
+`GET /v1/pautas/{pautaId}/resultado`
 
 Resposta `200 OK`:
 ```json
