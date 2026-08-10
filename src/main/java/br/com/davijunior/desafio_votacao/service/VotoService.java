@@ -1,5 +1,6 @@
 package br.com.davijunior.desafio_votacao.service;
 
+import br.com.davijunior.desafio_votacao.client.CpfValidacaoClient;
 import br.com.davijunior.desafio_votacao.dto.request.VotoRequest;
 import br.com.davijunior.desafio_votacao.dto.response.VotoResponse;
 import br.com.davijunior.desafio_votacao.entity.Associado;
@@ -25,6 +26,7 @@ public class VotoService {
     private final VotoRepository votoRepository;
     private final SessaoRepository sessaoRepository;
     private final AssociadoRepository associadoRepository;
+    private final CpfValidacaoClient cpfValidacaoClient;
 
     public VotoResponse votar(Long pautaId, VotoRequest request) {
         Sessao sessao = sessaoRepository.findByPautaId(pautaId)
@@ -33,6 +35,8 @@ public class VotoService {
         if (Instant.now().isAfter(sessao.getFim())) {
             throw new SessaoFechadaException("Sessão encerrada para a pauta: " + pautaId);
         }
+
+        cpfValidacaoClient.validar(request.cpf());
 
         Associado associado = associadoRepository.findByCpf(request.cpf())
                 .orElseGet(() -> associadoRepository.save(new Associado(null, request.cpf())));

@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
-    @ExceptionHandler({PautaNaoEncontradaException.class, SessaoNaoEncontradaException.class})
+    @ExceptionHandler({PautaNaoEncontradaException.class, SessaoNaoEncontradaException.class,
+            CpfInvalidoException.class, AssociadoNaoAptoException.class})
     public ResponseEntity<ErrorResponse> handleNaoEncontrada(RuntimeException ex) {
         log.warn(ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
