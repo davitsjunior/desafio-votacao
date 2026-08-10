@@ -185,3 +185,17 @@ docker compose up -d
 ```
 
 Executa os testes unitários (Services) e de integração dos Controllers (MockMvc), com verificação de cobertura mínima de 85% via JaCoCo. Relatório em `target/site/jacoco/index.html`.
+
+## Teste de carga (k6)
+
+Script em `load-test/votos-concorrentes.js` simula 50 usuários virtuais registrando votos concorrentes por 30s numa mesma sessão, medindo throughput e latência (p95 < 500ms).
+
+Pré-requisitos: [k6](https://k6.io/docs/get-started/installation/) instalado e a aplicação em execução.
+
+```bash
+docker compose up -d
+./mvnw spring-boot:run &
+k6 run load-test/votos-concorrentes.js
+```
+
+O client fake de validação de CPF (bônus) recusa aleatoriamente parte dos votos (`404`) — isso é esperado e contabilizado separadamente (`votos_recusados_client_cpf`), não é falha do teste de carga.
