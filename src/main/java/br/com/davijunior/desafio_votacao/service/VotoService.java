@@ -12,10 +12,12 @@ import br.com.davijunior.desafio_votacao.repository.AssociadoRepository;
 import br.com.davijunior.desafio_votacao.repository.SessaoRepository;
 import br.com.davijunior.desafio_votacao.repository.VotoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VotoService {
@@ -46,6 +48,8 @@ public class VotoService {
         voto.setCreatedAt(Instant.now());
 
         Voto salvo = votoRepository.save(voto);
+
+        log.info("Voto registrado: sessaoId={}, associadoId={}, opcao={}", sessao.getId(), associado.getId(), salvo.getOpcao());
 
         return new VotoResponse(salvo.getId(), associado.getId(), salvo.getOpcao(), salvo.getCreatedAt());
     }
