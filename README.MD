@@ -38,27 +38,49 @@ Decisões de negócio relevantes:
 - Docker Compose
 - Maven
 
+## Pré-requisitos
+
+- Java 21
+- Maven Wrapper (`./mvnw`, incluído no repositório)
+- Docker
+- Docker Compose
+
 ## Como executar
 
-Pré-requisitos: Docker e Maven (ou o wrapper `./mvnw`).
+### Desenvolvimento local
+
+A aplicação Spring Boot roda fora do container (IDE ou `./mvnw spring-boot:run`); apenas o PostgreSQL roda via Docker. Nesse modo a aplicação acessa o banco em `localhost:5432` (configuração padrão em `application.yaml`).
 
 ```bash
-docker compose up -d
+docker compose up postgres -d
 ./mvnw spring-boot:run
 ```
 
-A API sobe em `http://localhost:8080`.
+### Execução completa via Docker
+
+Aplicação e PostgreSQL rodam via `docker compose`, com a aplicação executada a partir da imagem definida no `Dockerfile`. Nesse modo a aplicação sobe com o profile `docker` (`SPRING_PROFILES_ACTIVE=docker`, definido no `docker-compose.yml`), que troca o host de conexão com o banco de `localhost` para `postgres` — o hostname do serviço na rede Docker.
+
+```bash
+./mvnw clean package
+docker compose up --build
+```
+
+Em ambos os modos a API sobe em `http://localhost:8080`.
 
 ## Docker
 
-O `docker-compose.yml` sobe apenas o banco PostgreSQL usado pela aplicação:
+Dados de conexão (também usados em `application.yaml`/`application-docker.yaml`): banco `desafio_votacao`, usuário/senha `postgres`/`postgres`.
+
+### Persistência
+
+O PostgreSQL grava os dados em um volume Docker (`postgres_data`), que permanece intacto mesmo após parar/recriar os containers.
 
 ```bash
-docker compose up -d      # inicia o PostgreSQL na porta 5432
-docker compose down       # para os containers
+docker compose down       # para e remove os containers; o volume (dados) é preservado
+docker compose down -v    # também remove o volume — apaga os dados persistidos
 ```
 
-Dados de conexão (também usados em `application.yaml`): banco `desafio_votacao`, usuário/senha `postgres`/`postgres`.
+> A aplicação está containerizada (`Dockerfile` + `docker-compose.yml`), o que facilita sua execução em qualquer ambiente compatível com Docker, incluindo infraestrutura cloud.
 
 ## Documentação da API (Swagger)
 
@@ -111,7 +133,7 @@ Requisição (corpo opcional — sem corpo ou `duracaoMinutos: null` usa o padr�
 {
   "duracaoMinutos": 5
 }
-```
+``` 
 
 Resposta `201 Created`:
 ```json
@@ -180,11 +202,10 @@ Todas as exceptions de negócio retornam um corpo padronizado:
 ## Testes
 
 ```bash
-docker compose up -d
 ./mvnw verify
 ```
 
-Executa os testes unitários (Services) e de integração dos Controllers (MockMvc), com verificação de cobertura mínima de 85% via JaCoCo. Relatório em `target/site/jacoco/index.html`.
+Executa os testes unitários (Services) e de integração dos Controllers (MockMvc), com verificação de cobertura mínima de 85% via JaCoCo. Relatório em `target/site/jacoco/index.html`. Os testes usam H2 em memória (`src/test/resources/application.yaml`), sem depender do PostgreSQL/Docker.
 
 ## Teste de carga (k6)
 
@@ -193,7 +214,7 @@ Script em `load-test/votos-concorrentes.js` simula 50 usuários virtuais registr
 Pré-requisitos: [k6](https://k6.io/docs/get-started/installation/) instalado e a aplicação em execução.
 
 ```bash
-docker compose up -d
+docker compose up postgres -d
 ./mvnw spring-boot:run &
 k6 run load-test/votos-concorrentes.js
 ```

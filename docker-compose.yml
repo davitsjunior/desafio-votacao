@@ -21,6 +21,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d desafio_votacao"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: desafio-votacao-app
+
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
 
   postgres_data:
