@@ -2,6 +2,7 @@ package br.com.davijunior.desafio_votacao.exception;
 
 import br.com.davijunior.desafio_votacao.dto.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,7 +25,8 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
-    @ExceptionHandler({PautaNaoEncontradaException.class, SessaoNaoEncontradaException.class})
+    @ExceptionHandler({PautaNaoEncontradaException.class, SessaoNaoEncontradaException.class,
+            CpfInvalidoException.class, AssociadoNaoAptoException.class})
     public ResponseEntity<ErrorResponse> handleNaoEncontrada(RuntimeException ex) {
         log.warn(ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -34,6 +36,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleConflito(RuntimeException ex) {
         log.warn(ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleViolacaoIntegridade(DataIntegrityViolationException ex) {
+        log.warn(ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, "Violação de restrição de integridade dos dados");
     }
 
     @ExceptionHandler(Exception.class)

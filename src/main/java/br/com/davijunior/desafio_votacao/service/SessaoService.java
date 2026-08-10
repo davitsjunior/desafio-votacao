@@ -10,11 +10,13 @@ import br.com.davijunior.desafio_votacao.exception.SessaoJaExisteException;
 import br.com.davijunior.desafio_votacao.repository.PautaRepository;
 import br.com.davijunior.desafio_votacao.repository.SessaoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessaoService {
@@ -43,6 +45,8 @@ public class SessaoService {
         sessao.setStatus(StatusSessao.ABERTA);
 
         Sessao salva = sessaoRepository.save(sessao);
+
+        log.info("Sessão aberta: id={}, pautaId={}, fim={}", salva.getId(), pauta.getId(), salva.getFim());
 
         return new SessaoResponse(salva.getId(), pauta.getId(), salva.getInicio(), salva.getFim(), salva.getStatus());
     }

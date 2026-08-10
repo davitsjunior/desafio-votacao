@@ -3,6 +3,8 @@ package br.com.davijunior.desafio_votacao.controller;
 import br.com.davijunior.desafio_votacao.dto.request.VotoRequest;
 import br.com.davijunior.desafio_votacao.dto.response.VotoResponse;
 import br.com.davijunior.desafio_votacao.enums.OpcaoVoto;
+import br.com.davijunior.desafio_votacao.exception.AssociadoNaoAptoException;
+import br.com.davijunior.desafio_votacao.exception.CpfInvalidoException;
 import br.com.davijunior.desafio_votacao.exception.SessaoFechadaException;
 import br.com.davijunior.desafio_votacao.exception.SessaoNaoEncontradaException;
 import br.com.davijunior.desafio_votacao.exception.VotoDuplicadoException;
@@ -40,7 +42,7 @@ class VotoControllerTest {
         VotoResponse response = new VotoResponse(100L, 2L, OpcaoVoto.SIM, Instant.now());
         when(votoService.votar(eq(1L), any(VotoRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/pautas/{pautaId}/votos", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new VotoRequest("12345678900", OpcaoVoto.SIM))))
                 .andExpect(status().isCreated())
@@ -50,7 +52,7 @@ class VotoControllerTest {
 
     @Test
     void deveRetornar400QuandoCpfEmBranco() throws Exception {
-        mockMvc.perform(post("/pautas/{pautaId}/votos", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new VotoRequest("", OpcaoVoto.SIM))))
                 .andExpect(status().isBadRequest());
@@ -61,7 +63,7 @@ class VotoControllerTest {
         when(votoService.votar(eq(1L), any(VotoRequest.class)))
                 .thenThrow(new SessaoNaoEncontradaException("Sessão não encontrada para a pauta: 1"));
 
-        mockMvc.perform(post("/pautas/{pautaId}/votos", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new VotoRequest("12345678900", OpcaoVoto.SIM))))
                 .andExpect(status().isNotFound());
@@ -72,7 +74,7 @@ class VotoControllerTest {
         when(votoService.votar(eq(1L), any(VotoRequest.class)))
                 .thenThrow(new SessaoFechadaException("Sessão encerrada para a pauta: 1"));
 
-        mockMvc.perform(post("/pautas/{pautaId}/votos", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new VotoRequest("12345678900", OpcaoVoto.SIM))))
                 .andExpect(status().isConflict());
@@ -83,9 +85,31 @@ class VotoControllerTest {
         when(votoService.votar(eq(1L), any(VotoRequest.class)))
                 .thenThrow(new VotoDuplicadoException("Associado já votou nesta sessão"));
 
-        mockMvc.perform(post("/pautas/{pautaId}/votos", 1L)
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new VotoRequest("12345678900", OpcaoVoto.SIM))))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void deveRetornar404QuandoCpfInvalido() throws Exception {
+        when(votoService.votar(eq(1L), any(VotoRequest.class)))
+                .thenThrow(new CpfInvalidoException("CPF inválido"));
+
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new VotoRequest("12345678900", OpcaoVoto.SIM))))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deveRetornar404QuandoAssociadoNaoAptoAVotar() throws Exception {
+        when(votoService.votar(eq(1L), any(VotoRequest.class)))
+                .thenThrow(new AssociadoNaoAptoException("Associado não apto a votar"));
+
+        mockMvc.perform(post("/v1/pautas/{pautaId}/votos", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new VotoRequest("12345678900", OpcaoVoto.SIM))))
+                .andExpect(status().isNotFound());
     }
 }

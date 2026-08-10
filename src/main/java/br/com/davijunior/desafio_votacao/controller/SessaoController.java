@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/pautas/{pautaId}/sessao")
+@RequestMapping("/v1/pautas/{pautaId}/sessao")
 @RequiredArgsConstructor
 @Tag(name = "Sessões")
 public class SessaoController {

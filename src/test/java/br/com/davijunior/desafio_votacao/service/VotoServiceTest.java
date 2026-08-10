@@ -1,11 +1,16 @@
 package br.com.davijunior.desafio_votacao.service;
 
+import br.com.davijunior.desafio_votacao.client.CpfValidacaoClient;
+import br.com.davijunior.desafio_votacao.client.CpfValidacaoResponse;
 import br.com.davijunior.desafio_votacao.dto.request.VotoRequest;
 import br.com.davijunior.desafio_votacao.dto.response.VotoResponse;
 import br.com.davijunior.desafio_votacao.entity.Associado;
 import br.com.davijunior.desafio_votacao.entity.Sessao;
 import br.com.davijunior.desafio_votacao.entity.Voto;
 import br.com.davijunior.desafio_votacao.enums.OpcaoVoto;
+import br.com.davijunior.desafio_votacao.enums.StatusVotacao;
+import br.com.davijunior.desafio_votacao.exception.AssociadoNaoAptoException;
+import br.com.davijunior.desafio_votacao.exception.CpfInvalidoException;
 import br.com.davijunior.desafio_votacao.exception.SessaoFechadaException;
 import br.com.davijunior.desafio_votacao.exception.SessaoNaoEncontradaException;
 import br.com.davijunior.desafio_votacao.exception.VotoDuplicadoException;
@@ -39,6 +44,9 @@ class VotoServiceTest {
     @Mock
     private AssociadoRepository associadoRepository;
 
+    @Mock
+    private CpfValidacaoClient cpfValidacaoClient;
+
     @InjectMocks
     private VotoService votoService;
 
@@ -56,6 +64,7 @@ class VotoServiceTest {
         Associado associado = new Associado(2L, "12345678900");
 
         when(sessaoRepository.findByPautaId(1L)).thenReturn(Optional.of(sessao));
+        when(cpfValidacaoClient.validar("12345678900")).thenReturn(new CpfValidacaoResponse(StatusVotacao.ABLE_TO_VOTE));
         when(associadoRepository.findByCpf("12345678900")).thenReturn(Optional.of(associado));
         when(votoRepository.existsBySessaoIdAndAssociadoId(10L, 2L)).thenReturn(false);
         when(votoRepository.save(any(Voto.class))).thenAnswer(invocation -> {
@@ -76,6 +85,7 @@ class VotoServiceTest {
         Sessao sessao = sessaoAberta();
 
         when(sessaoRepository.findByPautaId(1L)).thenReturn(Optional.of(sessao));
+        when(cpfValidacaoClient.validar("12345678900")).thenReturn(new CpfValidacaoResponse(StatusVotacao.ABLE_TO_VOTE));
         when(associadoRepository.findByCpf("12345678900")).thenReturn(Optional.empty());
         when(associadoRepository.save(any(Associado.class))).thenAnswer(invocation -> {
             Associado associado = invocation.getArgument(0);
@@ -117,10 +127,33 @@ class VotoServiceTest {
         Associado associado = new Associado(2L, "12345678900");
 
         when(sessaoRepository.findByPautaId(1L)).thenReturn(Optional.of(sessao));
+        when(cpfValidacaoClient.validar("12345678900")).thenReturn(new CpfValidacaoResponse(StatusVotacao.ABLE_TO_VOTE));
         when(associadoRepository.findByCpf("12345678900")).thenReturn(Optional.of(associado));
         when(votoRepository.existsBySessaoIdAndAssociadoId(10L, 2L)).thenReturn(true);
 
         assertThatThrownBy(() -> votoService.votar(1L, new VotoRequest("12345678900", OpcaoVoto.SIM)))
                 .isInstanceOf(VotoDuplicadoException.class);
+    }
+
+    @Test
+    void deveLancarExceptionQuandoCpfForInvalido() {
+        Sessao sessao = sessaoAberta();
+
+        when(sessaoRepository.findByPautaId(1L)).thenReturn(Optional.of(sessao));
+        when(cpfValidacaoClient.validar("12345678900")).thenThrow(new CpfInvalidoException("CPF inválido"));
+
+        assertThatThrownBy(() -> votoService.votar(1L, new VotoRequest("12345678900", OpcaoVoto.SIM)))
+                .isInstanceOf(CpfInvalidoException.class);
+    }
+
+    @Test
+    void deveLancarExceptionQuandoAssociadoNaoAptoAVotar() {
+        Sessao sessao = sessaoAberta();
+
+        when(sessaoRepository.findByPautaId(1L)).thenReturn(Optional.of(sessao));
+        when(cpfValidacaoClient.validar("12345678900")).thenThrow(new AssociadoNaoAptoException("Associado não apto a votar"));
+
+        assertThatThrownBy(() -> votoService.votar(1L, new VotoRequest("12345678900", OpcaoVoto.SIM)))
+                .isInstanceOf(AssociadoNaoAptoException.class);
     }
 }

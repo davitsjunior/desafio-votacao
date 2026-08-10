@@ -27,7 +27,7 @@ class ResultadoControllerTest {
     void deveConsultarResultado() throws Exception {
         when(resultadoService.apurar(1L)).thenReturn(new ResultadoResponse(7L, 3L, 10L));
 
-        mockMvc.perform(get("/pautas/{pautaId}/resultado", 1L))
+        mockMvc.perform(get("/v1/pautas/{pautaId}/resultado", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalSim").value(7))
                 .andExpect(jsonPath("$.totalNao").value(3))
@@ -39,7 +39,7 @@ class ResultadoControllerTest {
         when(resultadoService.apurar(1L))
                 .thenThrow(new SessaoNaoEncontradaException("Sessão não encontrada para a pauta: 1"));
 
-        mockMvc.perform(get("/pautas/{pautaId}/resultado", 1L))
+        mockMvc.perform(get("/v1/pautas/{pautaId}/resultado", 1L))
                 .andExpect(status().isNotFound());
     }
 }

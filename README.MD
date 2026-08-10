@@ -38,27 +38,49 @@ Decisões de negócio relevantes:
 - Docker Compose
 - Maven
 
+## Pré-requisitos
+
+- Java 21
+- Maven Wrapper (`./mvnw`, incluído no repositório)
+- Docker
+- Docker Compose
+
 ## Como executar
 
-Pré-requisitos: Docker e Maven (ou o wrapper `./mvnw`).
+### Desenvolvimento local
+
+A aplicação Spring Boot roda fora do container (IDE ou `./mvnw spring-boot:run`); apenas o PostgreSQL roda via Docker. Nesse modo a aplicação acessa o banco em `localhost:5432` (configuração padrão em `application.yaml`).
 
 ```bash
-docker compose up -d
+docker compose up postgres -d
 ./mvnw spring-boot:run
 ```
 
-A API sobe em `http://localhost:8080`.
+### Execução completa via Docker
+
+Aplicação e PostgreSQL rodam via `docker compose`, com a aplicação executada a partir da imagem definida no `Dockerfile`. Nesse modo a aplicação sobe com o profile `docker` (`SPRING_PROFILES_ACTIVE=docker`, definido no `docker-compose.yml`), que troca o host de conexão com o banco de `localhost` para `postgres` — o hostname do serviço na rede Docker.
+
+```bash
+./mvnw clean package
+docker compose up --build
+```
+
+Em ambos os modos a API sobe em `http://localhost:8080`.
 
 ## Docker
 
-O `docker-compose.yml` sobe apenas o banco PostgreSQL usado pela aplicação:
+Dados de conexão (também usados em `application.yaml`/`application-docker.yaml`): banco `desafio_votacao`, usuário/senha `postgres`/`postgres`.
+
+### Persistência
+
+O PostgreSQL grava os dados em um volume Docker (`postgres_data`), que permanece intacto mesmo após parar/recriar os containers.
 
 ```bash
-docker compose up -d      # inicia o PostgreSQL na porta 5432
-docker compose down       # para os containers
+docker compose down       # para e remove os containers; o volume (dados) é preservado
+docker compose down -v    # também remove o volume — apaga os dados persistidos
 ```
 
-Dados de conexão (também usados em `application.yaml`): banco `desafio_votacao`, usuário/senha `postgres`/`postgres`.
+> A aplicação está containerizada (`Dockerfile` + `docker-compose.yml`), o que facilita sua execução em qualquer ambiente compatível com Docker, incluindo infraestrutura cloud.
 
 ## Documentação da API (Swagger)
 
@@ -67,18 +89,22 @@ Com a aplicação em execução:
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 
+## Versionamento da API
+
+Estratégia adotada: **versionamento via URI path**, com prefixo `/v1` em todos os endpoints (ex.: `/v1/pautas`). Uma futura versão incompatível seria exposta em controllers próprios sob `/v2`, mantendo `/v1` funcionando sem quebra para clientes existentes.
+
 ## Endpoints
 
-| Método | Endpoint                     | Descrição                                  |
-|--------|-------------------------------|---------------------------------------------|
-| POST   | `/pautas`                    | Cadastra uma nova pauta                     |
-| POST   | `/pautas/{pautaId}/sessao`   | Abre uma sessão de votação (padrão: 1 min)  |
-| POST   | `/pautas/{pautaId}/votos`    | Registra o voto de um associado             |
-| GET    | `/pautas/{pautaId}/resultado`| Consulta o resultado da votação             |
+| Método | Endpoint                        | Descrição                                  |
+|--------|-----------------------------------|---------------------------------------------|
+| POST   | `/v1/pautas`                    | Cadastra uma nova pauta                     |
+| POST   | `/v1/pautas/{pautaId}/sessao`   | Abre uma sessão de votação (padrão: 1 min)  |
+| POST   | `/v1/pautas/{pautaId}/votos`    | Registra o voto de um associado             |
+| GET    | `/v1/pautas/{pautaId}/resultado`| Consulta o resultado da votação             |
 
 ### Cadastrar pauta
 
-`POST /pautas`
+`POST /v1/pautas`
 
 Requisição:
 ```json
@@ -100,14 +126,14 @@ Resposta `201 Created`:
 
 ### Abrir sessão de votação
 
-`POST /pautas/{pautaId}/sessao`
+`POST /v1/pautas/{pautaId}/sessao`
 
 Requisição (corpo opcional — sem corpo ou `duracaoMinutos: null` usa o padrão de 1 minuto):
 ```json
 {
   "duracaoMinutos": 5
 }
-```
+``` 
 
 Resposta `201 Created`:
 ```json
@@ -122,7 +148,7 @@ Resposta `201 Created`:
 
 ### Registrar voto
 
-`POST /pautas/{pautaId}/votos`
+`POST /v1/pautas/{pautaId}/votos`
 
 Requisição:
 ```json
@@ -144,7 +170,7 @@ Resposta `201 Created`:
 
 ### Consultar resultado
 
-`GET /pautas/{pautaId}/resultado`
+`GET /v1/pautas/{pautaId}/resultado`
 
 Resposta `200 OK`:
 ```json
@@ -176,8 +202,21 @@ Todas as exceptions de negócio retornam um corpo padronizado:
 ## Testes
 
 ```bash
-docker compose up -d
 ./mvnw verify
 ```
 
-Executa os testes unitários (Services) e de integração dos Controllers (MockMvc), com verificação de cobertura mínima de 85% via JaCoCo. Relatório em `target/site/jacoco/index.html`.
+Executa os testes unitários (Services) e de integração dos Controllers (MockMvc), com verificação de cobertura mínima de 85% via JaCoCo. Relatório em `target/site/jacoco/index.html`. Os testes usam H2 em memória (`src/test/resources/application.yaml`), sem depender do PostgreSQL/Docker.
+
+## Teste de carga (k6)
+
+Script em `load-test/votos-concorrentes.js` simula 50 usuários virtuais registrando votos concorrentes por 30s numa mesma sessão, medindo throughput e latência (p95 < 500ms).
+
+Pré-requisitos: [k6](https://k6.io/docs/get-started/installation/) instalado e a aplicação em execução.
+
+```bash
+docker compose up postgres -d
+./mvnw spring-boot:run &
+k6 run load-test/votos-concorrentes.js
+```
+
+O client fake de validação de CPF (bônus) recusa aleatoriamente parte dos votos (`404`) — isso é esperado e contabilizado separadamente (`votos_recusados_client_cpf`), não é falha do teste de carga.

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/pautas/{pautaId}/votos")
+@RequestMapping("/v1/pautas/{pautaId}/votos")
 @RequiredArgsConstructor
 @Tag(name = "Votos")
 public class VotoController {

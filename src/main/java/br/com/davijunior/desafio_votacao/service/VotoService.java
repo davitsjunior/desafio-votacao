@@ -1,5 +1,6 @@
 package br.com.davijunior.desafio_votacao.service;
 
+import br.com.davijunior.desafio_votacao.client.CpfValidacaoClient;
 import br.com.davijunior.desafio_votacao.dto.request.VotoRequest;
 import br.com.davijunior.desafio_votacao.dto.response.VotoResponse;
 import br.com.davijunior.desafio_votacao.entity.Associado;
@@ -12,10 +13,12 @@ import br.com.davijunior.desafio_votacao.repository.AssociadoRepository;
 import br.com.davijunior.desafio_votacao.repository.SessaoRepository;
 import br.com.davijunior.desafio_votacao.repository.VotoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VotoService {
@@ -23,6 +26,7 @@ public class VotoService {
     private final VotoRepository votoRepository;
     private final SessaoRepository sessaoRepository;
     private final AssociadoRepository associadoRepository;
+    private final CpfValidacaoClient cpfValidacaoClient;
 
     public VotoResponse votar(Long pautaId, VotoRequest request) {
         Sessao sessao = sessaoRepository.findByPautaId(pautaId)
@@ -31,6 +35,8 @@ public class VotoService {
         if (Instant.now().isAfter(sessao.getFim())) {
             throw new SessaoFechadaException("Sessão encerrada para a pauta: " + pautaId);
         }
+
+        cpfValidacaoClient.validar(request.cpf());
 
         Associado associado = associadoRepository.findByCpf(request.cpf())
                 .orElseGet(() -> associadoRepository.save(new Associado(null, request.cpf())));
@@ -46,6 +52,8 @@ public class VotoService {
         voto.setCreatedAt(Instant.now());
 
         Voto salvo = votoRepository.save(voto);
+
+        log.info("Voto registrado: sessaoId={}, associadoId={}, opcao={}", sessao.getId(), associado.getId(), salvo.getOpcao());
 
         return new VotoResponse(salvo.getId(), associado.getId(), salvo.getOpcao(), salvo.getCreatedAt());
     }
